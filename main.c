@@ -32,8 +32,8 @@ AD * buscaDir(char * nome, AD * arv){
 	
 }
 
-AD * criaDir(){
-	AD * novo = (AD *) malloc (sizeof(AD));
+AD* criaDir(){
+	AD* novo = (AD*)malloc(sizeof(AD));
 	printf("Digite um nome: ");
     scanf("%s", &novo->nome);
     novo->tipo ='D';
@@ -46,6 +46,7 @@ AD * criaDir(){
 	return novo;
 
 }
+
 AD * criaArq (){
 	AD * novo = (AD * ) malloc (sizeof(AD));
 	printf("Digite o nome do arquivo: ");
@@ -106,8 +107,7 @@ void * insereArq(char * nomePasta, AD * arv){
 
 
 int main(int argc, char** argv) {
-	AD* arv = iniciaArv();
-	insereArq("aaaa",arv);
-	
+	//AD* arv = iniciaArv();
+	//insereArq("aaaa",arv);
 	return 0;
 }

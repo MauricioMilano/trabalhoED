@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdio.h>8
 #include <time.h>
 typedef struct Dir{
 	char * nome;
@@ -52,7 +52,9 @@ AD * criaArq (){
 	printf("Digite o nome do arquivo: ");
 	scanf("%s", &novo->nome);
 	printf("Digite o tipo de arquivo: (T para Texto e B para binário) ");
-	scanf("%d", &novo->tipo);
+	scanf("%s", &novo->tipo);
+	printf("Digite o tamanho do arquivo: ");
+	scanf("%d", &novo->tamanho);
 	_strdate( novo->dataCriacao);
 	_strdate( novo->dataModific);
 	_strtime( novo->horaCriacao);
@@ -63,13 +65,18 @@ AD * criaArq (){
 	
 }
 
-void * insereDir(char * nomePasta,AD * arv){
+void * insereDir(char* nomePasta,AD * arv){
 	AD * novo = criaDir();
 	if (arv == NULL){
 		arv = novo;
 		return;
 	}
+	if(!buscaDir(nomePasta, arv)){
+		printf("não foi encontrada a pasta desejada! ");
+		return;
+	}
 	AD * aux = buscaDir(nomePasta,arv);
+	
 	if(aux->filho == NULL){
 		aux -> filho = novo;
 		novo ->pai = aux;
@@ -88,6 +95,11 @@ void * insereArq(char * nomePasta, AD * arv){
 	if (arv == NULL){
 		arv = novo;
 		return;
+	}
+	if(!buscaDir(nomePasta, arv)){
+		printf("não foi encontrada a pasta desejada! ");
+		return;
+		
 	}
 	AD * aux = buscaDir(nomePasta,arv);
 	if(aux->filho == NULL){

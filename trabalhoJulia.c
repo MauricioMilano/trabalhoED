@@ -10,6 +10,7 @@ typedef struct dir{
 	char* datahoraModific;
 	void* ultimoFilho;
 	void* ultimoIrmao;
+	void* pai;
 	char tipo;
 	int tamanho;
 	char nome[30];
@@ -70,7 +71,7 @@ AD* criaArq (AD*dir){
 		AD* novo = (AD*) malloc (sizeof(AD));
 		printf("Digite o nome do arquivo: ");
 		scanf("%s", novo->nome);
-		printf("Digite o tipo de arquivo: (T para Texto e B para binário) ");
+		printf("Digite o tipo de arquivo: (T para Texto e B para binario) ");
 		
 		scanf(" %c", &novo->tipo);
 		printf("Digite o tamanho do arquivo: ");
@@ -124,6 +125,7 @@ AD* insereDir(AD*arv, char* nomePasta){
 	novo->ultimoIrmao = pai->ultimoFilho;
 	pai->ultimoFilho = novo;
 	pai->nDirs+= 1;
+	novo->pai = pai;
 	return novo;
 }
 
@@ -135,28 +137,99 @@ AD* insereArq(AD*arv, char*nomePasta){
 	novo->ultimoIrmao = pai->ultimoFilho;
 	pai->ultimoFilho = novo;
 	pai->nArqs+=1;
+	novo->pai = pai;
 	return novo;
 }
 
 void renomear(char* nomePasta, AD*arv){
 	AD* aux = buscarDir(arv, nomePasta);
 	if(!aux){
-		printf("não foi encontrada a pasta/arquivo desejada! ");
+		printf("nao foi encontrada a pasta/arquivo desejada! ");
 		return;
 	}
 	printf("Digite o novo nome para o arquivo/diretorio: ");
 	scanf("%s", aux->nome);
 }
 
+void mover(AD*raiz, char* nomePasta, char* destino){
+	AD*aux = buscarDir(raiz, nomePasta);
+	AD*dest = buscarDir(raiz, destino);
+	if(!dest){
+		printf("querido usuario, destino nao encontrado!");
+		return;
+	}
+	if(!aux){
+		printf("querido usuario, a pasta que vc quer mover nao existe");
+		return;		
+	}
+}
+
+
+void* libera(AD*arv){
+	AD * pai = arv->pai;
+	
+	if(pai->ultimoFilho!=NULL){
+		libera(arv->ultimoIrmao);
+		libera(arv->ultimoFilho);
+		free(arv);
+	}
+	return;
+}
+void excluirDir(AD*arv){
+	printf("chamou");
+	if(!arv)
+		return;
+	AD* filhos = arv->ultimoFilho;
+  	if (filhos == NULL){
+		libera(arv);
+		return;
+	}
+  	while (filhos != NULL){
+    	excluirDir(filhos);
+    	filhos = filhos->ultimoIrmao;
+  		libera(filhos);
+	}
+}
+/*void excluirDir(AD*arv){
+ 	if (arv == NULL){
+  		printf("nulo");
+  		return;
+  	}
+	if(!arv->ultimoFilho){
+		free(arv);
+		arv = NULL;
+	}
+}*/
+
+AD* destruirDir(char*nomePasta, AD*arv){
+	AD*aux = buscarDir(arv, nomePasta);
+	if(!aux){
+		printf("nao foi encontrada a pasta/arquivo desejada! ");
+		return;	
+	}
+	printf("Voce tem certeza que deseja destruir esse diretorio e tudo que esta nele(s ou n)?");
+	char opcao; 
+	scanf(" %c", &opcao);
+	if(opcao == 's'){
+		printf("chegou aqui");
+		excluirDir(aux);
+		return arv;
+	}else{
+		return arv;
+	}
+}
+
+
+
 
 /*
 void destruirDir(char*nomePasta, AD*arv){
 	AD* aux = buscaDir(nomePasta, arv);
 	if(!aux){
-		printf("não foi encontrada a pasta/arquivo desejada! ");
+		printf("nao foi encontrada a pasta/arquivo desejada! ");
 		return;
 	}
-	printf("Você tem certeza que deseja destruir esse diretório e tudo que está nele(s ou n)?");
+	printf("Voce tem certeza que deseja destruir esse diret?rio e tudo que esta nele(s ou n)?");
 	char opcao; 
 	scanf("%c", &opcao);
 	if(opcao == 's'){
@@ -175,10 +248,10 @@ void destruirDir(char*nomePasta, AD*arv){
 void destruirArq(char*nomePasta, AD*arv){
 	AD* aux = buscaDir(nomePasta, arv);
 	if(!aux){
-		printf("não foi encontrada a pasta/arquivo desejada! ");
+		printf("n?o foi encontrada a pasta/arquivo desejada! ");
 		return;
 	}
-	printf("Você tem certeza que deseja destruir esse arquivo (s ou n)?");
+	printf("Voc? tem certeza que deseja destruir esse arquivo (s ou n)?");
 	char opcao; 
 	scanf("%c", &opcao);
 	if(opcao == 's'){
@@ -189,15 +262,36 @@ void destruirArq(char*nomePasta, AD*arv){
 	
 }
 */
-
+void modifica(AD* arv){
+	if(!arv->tipo=='D'){
+		arv->tipo='D';
+		arv->tamanho=0;
+		arv->datahoraModific = datetime();
+	}else{
+		printf("Qual tipo de arquivo deseja: B ou T");
+		scanf(" %c", &arv->tipo);
+		printf("Qual é o tamanho do arquivo:");
+		scanf(" %d", &arv->tamanho);
+		arv->datahoraModific = datetime();
+		AD * filho = arv->ultimoFilho;
+		while(filho){
+			destruirDir(filho->nome, arv);
+			filho = filho->ultimoIrmao;
+		}
+	}
+}
 
 
 int main(void) {
 	AD* raiz = criaRaizDir();
-	insereArq(raiz, "aaa");
-	renomear("aaa", raiz);
+	insereDir(raiz, "ab");
+	insereDir(raiz, "aaa");
+	imprime(raiz);
+	//free(raiz->ultimoFilho);
+	//raiz->ultimoFilho = NULL;
+	//raiz = destruirDir("ab", raiz);
+	raiz = libera(raiz->ultimoFilho);
+	printf("resultado\n");
 	imprime(raiz);
 	return 0;
 }
-
-

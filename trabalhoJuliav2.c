@@ -27,13 +27,6 @@ char* datetime(){
     return array;
 }
 
-AD * iniciaArv(){
-	AD * arv = NULL;
-	return arv;
-} 
-
-
-
 AD* criarNovoDir(){
    AD* novoNo = (AD*)malloc(sizeof(AD));
    novoNo->ultimoFilho = NULL;
@@ -43,6 +36,7 @@ AD* criarNovoDir(){
    novoNo->tipo ='D';
 	novoNo->nArqs = 0;
 	novoNo->nDirs = 0;
+	novoNo->pai = NULL;
 	novoNo->datahoraCriacao = datetime();
 	novoNo->datahoraModific = datetime();
 	return novoNo;
@@ -86,11 +80,22 @@ AD* criaArq (AD*dir){
 }
 
 void imprime(AD* raiz){
-  if (raiz == NULL) return;
-  if((raiz->tipo == 'T') || (raiz->tipo == 'B'))
-  	printf("%c" "%c" "%s" "%c" "%s" "%c" "%s" "%c" "Tamanho: %d", raiz->tipo, '/', raiz->nome, '/', raiz->datahoraCriacao, '/', raiz->datahoraModific, '/',raiz->tamanho);
-  if(raiz->tipo == 'D')
-	printf("%c" "%c" "%s" "%c" "Numero de Arquivos: %d" "%c" "Numero de Dir: %d" "%c" "%s" "%c" "%s\n",raiz->tipo, '/', raiz->nome, '/', raiz->nArqs, '/', raiz->nDirs, '/',raiz->datahoraCriacao, '/', raiz->datahoraModific);
+	
+	AD*pai = raiz->pai;
+	if (raiz == NULL) return;
+	if(!pai){
+		char* paiNulo = "Pai: null";
+		if((raiz->tipo == 'T') || (raiz->tipo == 'B'))
+  			printf("%c" "%c" "%s" "%c" "%s" "%c" "%s" "%c" "%s" "%c" "Tamanho: %d", raiz->tipo, '/', raiz->nome, '/', paiNulo, '/', raiz->datahoraCriacao, '/', raiz->datahoraModific, '/',raiz->tamanho);
+  		if(raiz->tipo == 'D')
+			printf("%c" "%c" "%s" "%c" "%s" "%c" "Numero de Arquivos: %d" "%c" "Numero de Dir: %d" "%c" "%s" "%c" "%s\n",raiz->tipo, '/', raiz->nome, '/', paiNulo, '/', raiz->nArqs, '/', raiz->nDirs, '/',raiz->datahoraCriacao, '/', raiz->datahoraModific);
+  	}else{
+  		if((raiz->tipo == 'T') || (raiz->tipo == 'B'))
+  			printf("%c" "%c" "%s" "%c" " Pai: %s" "%c" "%s" "%c" "%s" "%c" "Tamanho: %d", raiz->tipo, '/', raiz->nome, '/', pai->nome, '/', raiz->datahoraCriacao, '/', raiz->datahoraModific, '/',raiz->tamanho);
+  		if(raiz->tipo == 'D')
+			printf("%c" "%c" "%s" "%c" " Pai: %s" "%c" "Numero de Arquivos: %d" "%c" "Numero de Dir: %d" "%c" "%s" "%c" "%s\n",raiz->tipo, '/', raiz->nome, '/', pai->nome, '/', raiz->nArqs, '/', raiz->nDirs, '/',raiz->datahoraCriacao, '/', raiz->datahoraModific);
+	}
+
   
   AD* filhos = raiz->ultimoFilho;
   if (filhos == NULL) return;
@@ -126,6 +131,7 @@ AD* insereDir(AD*arv, char* nomePasta){
 	pai->ultimoFilho = novo;
 	pai->nDirs+= 1;
 	novo->pai = pai;
+	pai->datahoraModific = datetime();
 	return novo;
 }
 
@@ -138,7 +144,9 @@ AD* insereArq(AD*arv, char*nomePasta){
 	pai->ultimoFilho = novo;
 	pai->nArqs+=1;
 	novo->pai = pai;
+	pai->datahoraModific=datetime();
 	return novo;
+	
 }
 
 void renomear(char* nomePasta, AD*arv){
@@ -151,9 +159,31 @@ void renomear(char* nomePasta, AD*arv){
 	scanf("%s", aux->nome);
 }
 
+void insereFilho(AD*arv, AD*dest){
+	if(!dest->ultimoFilho){
+		dest->ultimoFilho=arv;
+		arv->pai = dest;
+	}else{
+		AD* filho = dest->ultimoFilho;
+		while(filho->ultimoIrmao){
+			filho = filho->ultimoIrmao;
+		}
+		filho->ultimoIrmao = arv;
+		arv->pai = dest;
+	}
+	if(arv->tipo=='D'){
+		dest->nDirs += 1;
+	}else{
+		dest->nArqs += 1;
+	}
+	arv->datahoraModific = datetime();
+	dest->datahoraModific = datetime();
+}
+
 void mover(AD*raiz, char* nomePasta, char* destino){
 	AD*aux = buscarDir(raiz, nomePasta);
 	AD*dest = buscarDir(raiz, destino);
+	AD* paiF = aux->pai;
 	if(!dest){
 		printf("querido usuario, destino nao encontrado!");
 		return;
@@ -162,6 +192,39 @@ void mover(AD*raiz, char* nomePasta, char* destino){
 		printf("querido usuario, a pasta que vc quer mover nao existe");
 		return;		
 	}
+	if(aux->tipo=='D'){
+		paiF->nDirs -=1;
+	}else{
+		paiF->nArqs -=1;
+	}
+	AD* pai = aux->pai;
+	if(!pai){
+		printf("não pode mover a raíz");
+		return;
+	}
+	AD* filho = pai->ultimoFilho;
+	if(!filho->ultimoIrmao){
+		pai->ultimoFilho=NULL;
+		insereFilho(filho, dest);
+		return;
+	}if(filho == aux){
+		pai->ultimoFilho= filho->ultimoIrmao;
+		insereFilho(filho, dest);
+		return;
+	}
+	else{
+		AD* ant = filho;
+		filho = filho->ultimoIrmao;
+		while(filho!=aux){
+			ant = filho;
+			filho = filho->ultimoIrmao;
+		}
+		ant->ultimoFilho= filho->ultimoFilho;
+		filho->ultimoFilho=NULL;
+		insereFilho(filho, dest);
+	}
+
+	
 }
 
 
@@ -175,6 +238,7 @@ void* libera(AD*arv){
 	}
 	return;
 }
+
 void excluirIrmaos(AD* arv){
 	if(!arv) return;
 	if(!arv->ultimoIrmao){
@@ -248,36 +312,55 @@ void excluirDir(AD*arv, char* nomePasta){
 }
 
 
-void modifica(AD* arv){
+void modifica(char *nomeArv,AD* raiz){
+	AD * arv = buscarDir(raiz,nomeArv);
+	if(!arv){
+		printf("nao foi encontrada a pasta/arquivo desejada! ");
+		return;	
+	}
 	if(!arv->tipo=='D'){
 		arv->tipo='D';
 		arv->tamanho=0;
 		arv->datahoraModific = datetime();
 	}else{
-		printf("Qual tipo de arquivo deseja: B ou T");
-		scanf(" %c", &arv->tipo);
-		printf("Qual ? o tamanho do arquivo:");
-		scanf(" %d", &arv->tamanho);
-		arv->datahoraModific = datetime();
-		AD * filho = arv->ultimoFilho;
-		while(filho){
-			excluirDir(arv, filho->nome);
-			filho = filho->ultimoIrmao;
+		printf("tem certeza que deseja modificar o diretório? todos arquivos dele serão apagados. S/N: ");
+		char entrada;
+		scanf(" %c", &entrada);
+		if(entrada =='N'||entrada =='n'){
+			return;
+		}if(entrada=='S'|| entrada == 's'){
+		
+			printf("Qual tipo de arquivo deseja: B ou T ");
+			scanf(" %c", &arv->tipo);
+			printf("Qual ? o tamanho do arquivo: ");
+			scanf(" %d", &arv->tamanho);
+			arv->datahoraModific = datetime();
+			excluirFilhos(arv);
 		}
 	}
 }
 
 
+
 int main(void) {
 	AD* raiz = criaRaizDir();
 	insereDir(raiz, "ab");
+	
 	insereDir(raiz, "aaa");
 	//insereDir(raiz, "ab");
 	imprime(raiz);
+	printf("Digite qual pasta/arquivo quer mover: ");
+	char mover1[20];
+	scanf(" %s", &mover1);
+	printf("Digite qual pasta destino: ");
+	char mover2[20];
+	scanf(" %s", &mover2);
+	mover(raiz,mover1, mover2);
+	
 	//free(raiz->ultimoFilho);
 	//raiz->ultimoFilho = NULL;
 	//raiz = destruirDir("ab", raiz);
-	excluirDir(raiz, "as");
+	//excluirDir(raiz, "as");
 	printf("resultado\n");
 	imprime(raiz);
 	return 0;

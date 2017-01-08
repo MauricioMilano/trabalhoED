@@ -86,12 +86,12 @@ void imprime(AD* raiz){
 	if(!pai){
 		char* paiNulo = "Pai: null";
 		if((raiz->tipo == 'T') || (raiz->tipo == 'B'))
-  			printf("%c" "%c" "%s" "%c" "%s" "%c" "%s" "%c" "%s" "%c" "Tamanho: %d", raiz->tipo, '/', raiz->nome, '/', paiNulo, '/', raiz->datahoraCriacao, '/', raiz->datahoraModific, '/',raiz->tamanho);
+  			printf("%c" "%c" "%s" "%c" "%s" "%c" "%s" "%c" "%s" "%c" "Tamanho: %d\n", raiz->tipo, '/', raiz->nome, '/', paiNulo, '/', raiz->datahoraCriacao, '/', raiz->datahoraModific, '/',raiz->tamanho);
   		if(raiz->tipo == 'D')
 			printf("%c" "%c" "%s" "%c" "%s" "%c" "Numero de Arquivos: %d" "%c" "Numero de Dir: %d" "%c" "%s" "%c" "%s\n",raiz->tipo, '/', raiz->nome, '/', paiNulo, '/', raiz->nArqs, '/', raiz->nDirs, '/',raiz->datahoraCriacao, '/', raiz->datahoraModific);
   	}else{
   		if((raiz->tipo == 'T') || (raiz->tipo == 'B'))
-  			printf("%c" "%c" "%s" "%c" " Pai: %s" "%c" "%s" "%c" "%s" "%c" "Tamanho: %d", raiz->tipo, '/', raiz->nome, '/', pai->nome, '/', raiz->datahoraCriacao, '/', raiz->datahoraModific, '/',raiz->tamanho);
+  			printf("%c" "%c" "%s" "%c" " Pai: %s" "%c" "%s" "%c" "%s" "%c" "Tamanho: %d\n", raiz->tipo, '/', raiz->nome, '/', pai->nome, '/', raiz->datahoraCriacao, '/', raiz->datahoraModific, '/',raiz->tamanho);
   		if(raiz->tipo == 'D')
 			printf("%c" "%c" "%s" "%c" " Pai: %s" "%c" "Numero de Arquivos: %d" "%c" "Numero de Dir: %d" "%c" "%s" "%c" "%s\n",raiz->tipo, '/', raiz->nome, '/', pai->nome, '/', raiz->nArqs, '/', raiz->nDirs, '/',raiz->datahoraCriacao, '/', raiz->datahoraModific);
 	}
@@ -139,6 +139,10 @@ AD* insereArq(AD*arv, char*nomePasta){
 	AD*pai = buscarDir(arv, nomePasta);
 	if(!pai)
 		return NULL;
+	if((pai->tipo == 'T') || (pai->tipo == 'B')){
+		printf("nao pode inserir arquivo dentro de outro arquivo");
+		return NULL;
+	}
 	AD*novo = criaArq(pai);
 	novo->ultimoIrmao = pai->ultimoFilho;
 	pai->ultimoFilho = novo;
@@ -228,7 +232,7 @@ void mover(AD*raiz, char* nomePasta, char* destino){
 }
 
 
-void* libera(AD*arv){
+void libera(AD*arv){
 	AD * pai = arv->pai;
 	
 	if(pai->ultimoFilho!=NULL){
@@ -281,35 +285,46 @@ void excluirDir(AD*arv, char* nomePasta){
 	printf("Nao e possivel remover a raiz.\n");
 	 return;
 	}
-	printf("Voce tem certeza que deseja destruir esse diretorio e tudo que esta nele(s ou n)?");
-	char opcao; 
-	AD*pai;
-	scanf(" %c", &opcao);
-		if(opcao == 's'){
-			if(busca->pai){
-				pai = busca->pai;
-			}
-			if(busca->ultimoFilho){
-				AD*filhos = busca->ultimoFilho;
-			}
-			if(busca == pai->ultimoFilho){
+	if(busca->tipo == 'D'){
+		printf("Voce tem certeza que deseja destruir esse diretorio e tudo que esta nele(s ou n)?");
+		char opcao; 
+		AD*pai;
+		scanf(" %c", &opcao);
+			if(opcao == 's'){
+				if(busca->pai){
+					pai = busca->pai;
+				}
 				if(busca->ultimoFilho){
-					excluirFilhos(busca);
+					AD*filhos = busca->ultimoFilho;
 				}
-				if(busca->ultimoIrmao){
-					pai->ultimoFilho = busca->ultimoIrmao;
-				}
-				else if((!busca->ultimoFilho) && (!busca->ultimoIrmao)){
-					pai->ultimoFilho = NULL;
-					free(busca);
-					return;
-				}
+				if(busca == pai->ultimoFilho){
+					if(busca->ultimoFilho){
+						excluirFilhos(busca);
+					}
+					if(busca->ultimoIrmao){
+						pai->ultimoFilho = busca->ultimoIrmao;
+					}
+					else if((!busca->ultimoFilho) && (!busca->ultimoIrmao)){
+						pai->ultimoFilho = NULL;
+						free(busca);
+						return;
+					}
 					
 			}
 		}else{
 			return;
 		}
+
+	}else{
+		AD*pai = busca->pai;
+		pai->ultimoFilho = NULL;
+		free(busca);
+		return;
+	}
+	
 }
+
+
 
 
 void modifica(char *nomeArv,AD* raiz){
@@ -318,9 +333,11 @@ void modifica(char *nomeArv,AD* raiz){
 		printf("nao foi encontrada a pasta/arquivo desejada! ");
 		return;	
 	}
-	if(!arv->tipo=='D'){
+	if(arv->tipo!='D'){
 		arv->tipo='D';
 		arv->tamanho=0;
+		arv->nDirs = 0;
+		arv->nArqs = 0;
 		arv->datahoraModific = datetime();
 	}else{
 		printf("tem certeza que deseja modificar o diretório? todos arquivos dele serão apagados. S/N: ");
@@ -332,7 +349,7 @@ void modifica(char *nomeArv,AD* raiz){
 		
 			printf("Qual tipo de arquivo deseja: B ou T ");
 			scanf(" %c", &arv->tipo);
-			printf("Qual ? o tamanho do arquivo: ");
+			printf("Qual o tamanho do arquivo: ");
 			scanf(" %d", &arv->tamanho);
 			arv->datahoraModific = datetime();
 			excluirFilhos(arv);
@@ -344,17 +361,17 @@ void modifica(char *nomeArv,AD* raiz){
 
 int main(void) {
 	AD* raiz = criaRaizDir();
-	insereDir(raiz, "ab");
+	/*insereDir(raiz, "ab");
 	
 	insereDir(raiz, "aaa");
 	//insereDir(raiz, "ab");
 	imprime(raiz);
 	printf("Digite qual pasta/arquivo quer mover: ");
 	char mover1[20];
-	scanf(" %s", &mover1);
+	scanf("%s", mover1);
 	printf("Digite qual pasta destino: ");
 	char mover2[20];
-	scanf(" %s", &mover2);
+	scanf("%s", mover2);
 	mover(raiz,mover1, mover2);
 	
 	//free(raiz->ultimoFilho);
@@ -362,7 +379,86 @@ int main(void) {
 	//raiz = destruirDir("ab", raiz);
 	//excluirDir(raiz, "as");
 	printf("resultado\n");
-	imprime(raiz);
+	imprime(raiz);*/
+	int opcao = -1;
+	while(opcao!= 0){
+		printf("Qual funcao vc deseja executar?\n");
+		printf("Digite 1 para inserir diretorio.\n\nDigite 2 para inserir arquivo.\n\n");
+		printf("Digite 3 para remover arquivo ou diretorio.\n\nDigite 4 para mover arquivo ou diretorio.\n\n");
+		printf("Digite 5 para renomear diretorio.\n\nDigite 6 para modificar arquivo ou diretorio.\n\nDigite 7 para imprimir.\n\nDigite 0 para sair.\n\n");
+		scanf("%d", &opcao);
+		if(opcao == 1){
+			if(raiz->ultimoFilho == NULL){
+				printf("So existe a pasta raiz, sua pasta sera criada dentro da pasta raiz\n");
+				insereDir(raiz, raiz->nome);
+				imprime(raiz);
+			}else{
+				printf("Digite em qual pasta voce deseja inserir\n\n");
+				imprime(raiz);
+				char nome[30];
+				scanf("%s", nome);
+				insereDir(raiz, nome);
+				imprime(raiz);
+
+			}
+		}
+		if(opcao == 2){
+			if(raiz->ultimoFilho == NULL){
+				printf("So existe a pasta raiz, sua pasta sera criada dentro da pasta raiz\n");
+				insereArq(raiz, raiz->nome);
+				imprime(raiz);
+			}else{
+				printf("Digite em qual pasta voce deseja inserir\n\n");
+				imprime(raiz);
+				char nome[30];
+				scanf("%s", nome);
+				insereArq(raiz, nome);
+				imprime(raiz);
+
+			}
+		}
+
+		if(opcao == 3){
+			printf("Digite a pasta ou arquivo que vc deseja remover\n\n");
+			imprime(raiz);
+			char nome[30];
+			scanf("%s", nome);
+			excluirDir(raiz, nome);
+			imprime(raiz);
+		}
+		if(opcao == 4){
+			printf("Digite o arquivo ou pasta que vc deseja mover\n\n");
+			imprime(raiz);
+			char nome[30];
+			scanf("%s", nome);
+			printf("Digite a pasta de destino\n\n");
+			char dest[30];
+			scanf("%s", dest);
+			mover(raiz, nome, dest);
+			imprime(raiz);
+		}
+		if(opcao == 5){
+			printf("Digite o nome do arquivo ou pasta em que vc deseja renomear\n\n");
+			imprime(raiz);
+			char nome[30];
+			scanf("%s", nome);
+			renomear(nome, raiz);
+			imprime(raiz);
+
+		}
+		if(opcao == 6){
+			printf("Digite o nome da pasta ou arquivo que vc deseja modificar:\n\n");
+			imprime(raiz);
+			char nome[30];
+			scanf("%s", nome);
+			modifica(nome, raiz);
+			imprime(raiz);
+		}
+		if(opcao == 7){
+			imprime(raiz);
+		}
+	}
+
 	return 0;
 }
 
